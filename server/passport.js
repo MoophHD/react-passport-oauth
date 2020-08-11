@@ -22,7 +22,7 @@ passport.use(
     },
     (accessToken, refreshToken, profile, done) => {
       console.log(`passport profile`);
-      console.log(passport);
+      console.log(profile);
       
       done(null, profile);
     }
