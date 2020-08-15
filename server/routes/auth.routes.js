@@ -28,16 +28,36 @@ const jwt = require("jsonwebtoken");
 // };
 
 router.get(
+  "/user",
+  (req, res) => {
+    res.json(req.user);
+  }
+);
+
+router.get(
   "/github",
-  passport.authenticate("github", { session: false, scope: ["user:email"] })
+  passport.authenticate("github", { scope: ["user:email"] })
 );
 
 router.get(
   "/github/callback",
   passport.authenticate("github", {
-    successRedirect: "/login/success",
-    failureRedirect: "/login/failed",
-  })
+    failureRedirect:"/",
+    successRedirect: "/"
+  }), (req, res) => {
+    console.log(req.user);
+  }
 );
+
+
+// router.get(
+//   "/github/callback",
+//   passport.authenticate("github", {
+//     failureRedirect:"/"
+//   }),
+//   (req, res) => {
+//     res.json(req.user);
+//   }
+// );
 
 module.exports = router;

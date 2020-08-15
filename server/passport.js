@@ -8,19 +8,44 @@ const User = model("User");
 const secret = process.env.JWT_SECRET;
 
 passport.serializeUser((user, done) => {
-  done(null, user);
+  done(null, user.id);
 });
 
-passport.deserializeUser(async (user, done) => {
-  const {email, token} = user;
-
-  if (jwt.verify(token, secret)) {
-    const user = await User.findOne({email});
-    done(token, user);
-  }
-  
-  done(token, {test: "!"});
+passport.deserializeUser(async (id, done) => {
+  User.findOne({id}, function (err, user) {
+    done(err, user);
+  });
 });
+
+
+passport.use(
+  new GitHubStrategy(
+    {
+      clientID: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackURL: process.env.GITHUB_CALLBACK_URL,
+      scope: ["user:email"],
+      session: false,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const email = profile.emails[0].value;
+        const candidate = await User.findOne({ email });
+
+        if (!candidate) {
+          const user = new User({ email, id: profile.id, loginCounter: 0 });
+          await user.save();
+          return done(null, user);
+        }
+        candidate.updateOne({ loginCounter: candidate.loginCounter + 1 });
+
+        return done(null, candidate);
+      } catch (e) {
+        return done(e);
+      }
+    }
+  )
+);
 
 passport.use(
   new LocalStrategy(
@@ -51,34 +76,5 @@ passport.use(
   )
 );
 
-passport.use(
-  new GitHubStrategy(
-    {
-      clientID: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: process.env.GITHUB_CALLBACK_URL,
-      scope: ["user:email"],
-      session: false,
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        const email = profile.emails[0].value;
-        const candidate = await User.findOne({ email });
-        if (!candidate) {
-          const user = new User({ email });
-          await user.save();
-        } 
-        // Get jwt token
-        const token = jwt.sign({ email }, secret, {
-          expiresIn: "1h",
-        });
-
-        return done(null, { email, token });
-      } catch (e) {
-        console.log(`Error while signing in/up, ${e}`);
-      }
-    }
-  )
-);
 
 module.exports = passport;

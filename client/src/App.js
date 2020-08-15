@@ -1,7 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 function App() {
   const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    console.log(`app effect`);
+    async function getData() {
+      const profile = await fetch("/api/auth/user", {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      setProfile(JSON.stringify(await profile.json(), undefined, 2));
+    }
+
+    getData();
+  }, []);
 
   const authFetch = async () => {
     // doesn't work, throws cors error, tried to emulate link opening via headers
@@ -10,7 +23,7 @@ function App() {
       headers: {
         "Sec-Fetch-Dest": "document",
         "Sec-Fetch-Mode": "navigate",
-        "Upgrade-Insecure-Requests": 1
+        "Upgrade-Insecure-Requests": 1,
       },
     });
   };
@@ -23,9 +36,16 @@ function App() {
     <>
       <h1>Client side</h1>
       {profile ? (
-        <code>{JSON.stringify(profile)}</code>
+        <pre>{profile}</pre>
       ) : (
-        <div style={{ display: "inline-flex", flexDirection: "column" }}>
+        <div
+          style={{
+            display: "inline-flex",
+            flexDirection: "column",
+            border: "1.5px solid black",
+          }}
+        >
+          <h2>auth</h2>
           <button onClick={authNewWindow}>auth new window</button>
           <button onClick={authFetch}>auth via fetch</button>
           <a href="/api/auth/github">Auth html link</a>

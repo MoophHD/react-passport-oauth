@@ -5,6 +5,9 @@ const express = require("express");
 const passport = require("./passport");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const session = require("express-session");
+const cookieSession = require("cookie-session");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -12,7 +15,22 @@ app.set("trust proxy", 1);
 // Configurate our app
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.json({ extended: true }));
+app.use(cookieSession({ maxAge: 24 * 60 * 60 * 1000, keys: ['secret']}));
+// app.use(
+//   session({
+//     secret: process.env.SECRET,
+//     resave: true,
+//     saveUninitialized: true,
+//   })
+// );
+// app.use(cookieSession({
+//   name: 'session',
+//   keys: ['pass'],
+//   maxAge: 24 * 60 * 60 * 1000 // 24 hours
+// }))
+// app.use(cookieParser(process.env.SECRET));
 app.use(passport.initialize());
+app.use(passport.session());
 
 // configure passport
 require("./passport");
